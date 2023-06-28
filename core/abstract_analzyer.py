@@ -4,6 +4,8 @@ from typing import List, Callable, Optional, NamedTuple
 import numpy as np
 from tabulate import tabulate
 
+from core.utils import time_limit
+
 
 class Problem(NamedTuple):
     name: str
@@ -37,7 +39,15 @@ def compare_optimization_algorithms_in_table(algorithms: List[Algorithm], proble
         results = table[algo.name] = []
         print(f"=========== Testing {algo.name} ===========")
         for p in problems:
-            result = algo.solve(p)
+            try:
+                with time_limit(tl_seconds, 'sleep'):
+                    result = algo.solve(p)
+            except KeyboardInterrupt:
+                result = "TL"
+            except Exception as e:
+                print("Exception occurred:", e)
+                result = "×"
+
             print(f"Got result {result} at {problem_discriminator}={p.name}")
             results.append(result)
 
