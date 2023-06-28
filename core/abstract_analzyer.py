@@ -4,7 +4,7 @@ from typing import List, Callable, Optional, NamedTuple
 import numpy as np
 from tabulate import tabulate
 
-from core.utils import time_limit
+from core.utils import time_limit, TimeoutException
 
 
 class Problem(NamedTuple):
@@ -42,7 +42,7 @@ def compare_optimization_algorithms_in_table(algorithms: List[Algorithm], proble
             try:
                 with time_limit(tl_seconds, 'sleep'):
                     result = algo.solve(p)
-            except KeyboardInterrupt:
+            except TimeoutException:
                 result = "TL"
             except Exception as e:
                 print("Exception occurred:", e)

@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
     import time
     # ends after 1 second
-    with time_limit(10, 'sleep'):
+    with time_limit(1, 'sleep'):
         while True:
             pass
 
