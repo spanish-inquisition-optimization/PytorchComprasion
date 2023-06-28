@@ -1,6 +1,9 @@
 from collections import namedtuple
 from typing import List, Callable, Optional, NamedTuple
 
+import numpy as np
+from tabulate import tabulate
+
 
 class Problem(NamedTuple):
     name: str
@@ -12,12 +15,11 @@ class Problem(NamedTuple):
 class Algorithm(NamedTuple):
     name: str
 
-    """ Returns number of iterations required to achieve some result """
-    solve: Callable[[Problem], int]
-
+    """ Returns some estimate of algorithm's work to be displayed in the table """
+    solve: Callable[[Problem], np.array]
 
 def compare_optimization_algorithms_in_table(algorithms: List[Algorithm], problems: List[Problem],
-                                             tl_seconds: Optional[float]):
+                                             tl_seconds: Optional[float], problem_discriminator="problem"):
     """
     Algorithms correspond to columns, problems correspond to rows.
     Problems can differ in function
@@ -29,4 +31,15 @@ def compare_optimization_algorithms_in_table(algorithms: List[Algorithm], proble
     Algorithms are invoked with TL and exception handler. In the former case, «TL» will appear in the corresponding cell.
     In the latter case, that would be the «×» sign.
     """
-    pass
+    table = {problem_discriminator: [p.name for p in problems]}
+
+    for algo in algorithms:
+        results = table[algo.name] = []
+        print(f"=========== Testing {algo.name} ===========")
+        for p in problems:
+            result = algo.solve(p)
+            print(f"Got result {result} at {problem_discriminator}={p.name}")
+            results.append(result)
+
+    print(tabulate(table, headers="keys", tablefmt="grid"))
+
