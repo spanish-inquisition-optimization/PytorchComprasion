@@ -2,10 +2,16 @@ from collections import namedtuple
 from typing import List, Callable, Optional, NamedTuple
 
 import numpy as np
+import scipy.optimize
 from tabulate import tabulate
 
-from core.utils import time_limit, TimeoutException
+from core.gradient_descent import wolfe_conditions_search, precision_termination_condition
+from core.high_order_optimization import newton_optimize, NewtonDirectionApproximator, none_approximation
+from core.optimizer_evaluator import QuadraticForm, random_normalized_vector
+from core.utils import time_limit, TimeoutException, mesuare_time
 
+from scipy.optimize import rosen
+from scipy.optimize import rosen_der
 
 class Problem(NamedTuple):
     name: str
@@ -14,12 +20,67 @@ class Problem(NamedTuple):
     gradient: Callable
     hessian: Optional[Callable]
 
+    @classmethod
+    def from_quadratic_form(cls, q: QuadraticForm, name=None):
+        return Problem(
+            name if name is not None else f"Quadratic[n={q.n}, k={q.get_conditional_number()}]",
+            q,
+            random_normalized_vector(q.n),
+            q.gradient_function(),
+            q.hessian_function()
+        )
+
+    @classmethod
+    def from_rosen(cls, n: int):
+        return Problem(
+            f"Rosen[n={n}]",
+            rosen,
+            np.zeros(n),
+            rosen_der,
+            None
+        )
+
 
 class Algorithm(NamedTuple):
     name: str
 
     """ Returns some estimate of algorithm's work to be displayed in the table """
     solve: Callable[[Problem], np.array]
+
+    @classmethod
+    def scipy_optimize_with_solver(cls, solver_name: str, result_extractor, **kwargs):
+        def solve(problem: Problem):
+            opt_res, elapsed = mesuare_time(lambda: scipy.optimize.minimize(
+                problem.function,
+                problem.x0,
+                method=solver_name,
+                jac=problem.gradient,
+                hess=problem.hessian,
+                **kwargs
+            ))
+            return result_extractor(opt_res, elapsed)
+
+        return Algorithm(f"sp.{solver_name}", solve)
+
+    @classmethod
+    def quasi_newton_optimize_with_strategy(cls, strategy_name: str, strategy_provider: Callable[[], NewtonDirectionApproximator], result_extractor, initial_approximator=None):
+        def solve(problem: Problem):
+            opt_res, elapsed = mesuare_time(lambda: newton_optimize(
+                problem.function,
+                problem.gradient,
+                strategy_provider(),
+                problem.x0,
+                wolfe_conditions_search(0.1, 0.9),
+                precision_termination_condition,
+                none_approximation
+                # initial_approximator if initial_approximator is not None else none_approximation
+            ))
+
+            return result_extractor(opt_res, elapsed)
+
+        return Algorithm(f"hm.{strategy_name}", solve)
+
+
 
 def compare_optimization_algorithms_in_table(algorithms: List[Algorithm], problems: List[Problem],
                                              tl_seconds: Optional[float], problem_discriminator="problem"):

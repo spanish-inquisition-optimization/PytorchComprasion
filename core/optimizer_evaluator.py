@@ -1,6 +1,6 @@
 import asyncio
 from random import random, uniform
-from typing import Callable, NamedTuple, Tuple, Any
+from typing import Callable, NamedTuple, Tuple, Any, Optional
 
 import numpy as np
 from numpy import newaxis
@@ -14,6 +14,7 @@ class QuadraticForm(NamedTuple):
     Switching to arbitrary quadratic functions doesn't bring any additional interest to the problem.
     """
     matrix: np.ndarray
+    k: Optional[float] = None
     n = property(lambda self: self.matrix.shape[0])
 
     def __call__(self, x: np.ndarray):
@@ -25,6 +26,9 @@ class QuadraticForm(NamedTuple):
 
     def hessian_function(self):
         return lambda x: 2 * self.matrix
+
+    def get_conditional_number(self):
+        return self.k
 
 
 def random_orthonormal_basis(n):
@@ -74,7 +78,7 @@ def generate_positive_definite_quadratic_form(dimensions, condition_number, eige
     # Transposition matrix from canonical basis to B is just matrix `B`
     T_C_B = B
     T_B_C = B.T  # Just like `np.linalg.inv(T_C_B)` but faster
-    return QuadraticForm(T_C_B @ matrix_in_basis @ T_B_C)
+    return QuadraticForm(T_C_B @ matrix_in_basis @ T_B_C, condition_number)
 
 
 def average(computation: Callable[[], float], n_times) -> float:
