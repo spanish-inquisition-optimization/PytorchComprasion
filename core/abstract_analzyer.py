@@ -72,13 +72,29 @@ class Algorithm(NamedTuple):
                 problem.x0,
                 wolfe_conditions_search(0.1, 0.9),
                 precision_termination_condition,
-                none_approximation
-                # initial_approximator if initial_approximator is not None else none_approximation
+                initial_approximator if initial_approximator is not None else none_approximation
             ))
 
             return result_extractor(opt_res, elapsed)
 
         return Algorithm(f"hm.{strategy_name}", solve)
+
+    @classmethod
+    def gradient_descent(cls, name: str, algo, result_extractor):
+        def solve(problem: Problem):
+            opt_res, elapsed = mesuare_time(lambda: algo(
+                problem.function,
+                problem.gradient,
+                problem.x0,
+                wolfe_conditions_search(0.1, 0.9),
+                precision_termination_condition,
+            ))
+
+            return result_extractor(opt_res, elapsed)
+
+        return Algorithm(f"hm.{name}", solve)
+
+
 
 
 
