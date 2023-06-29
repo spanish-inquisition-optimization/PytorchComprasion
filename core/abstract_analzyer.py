@@ -10,6 +10,7 @@ from core.utils import time_limit, TimeoutException
 class Problem(NamedTuple):
     name: str
     function: Callable
+    x0: np.array
     gradient: Callable
     hessian: Optional[Callable]
 
