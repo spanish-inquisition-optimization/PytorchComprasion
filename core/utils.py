@@ -1,7 +1,10 @@
-from typing import Callable
+from typing import List, Callable, Optional, NamedTuple
 
 import numpy as np
+import time
 from numpy import newaxis
+from numpy.polynomial.polynomial import Polynomial
+from matplotlib import pyplot as plt
 
 
 class CallsCount:
@@ -75,6 +78,7 @@ def symmetrically_compute_gradient(f: Callable[[np.ndarray], float], h: float, x
         for i in range(x.size)
     ])
 
+
 def symmetrically_compute_jacobian(phi: Callable[[np.ndarray], np.ndarray], h: float, x: np.ndarray):
     n = x.size
     m = phi(x).size
@@ -87,7 +91,8 @@ def symmetrically_compute_jacobian(phi: Callable[[np.ndarray], np.ndarray], h: f
 
 def symmetrically_compute_second_order_partial_derivative(f: Callable[[np.ndarray], float], h: float, x: np.ndarray,
                                                           i: int, j: int):
-    return symmetrically_compute_partial_derivative(lambda xx: symmetrically_compute_partial_derivative(f, h, xx, i), h, x, j)
+    return symmetrically_compute_partial_derivative(lambda xx: symmetrically_compute_partial_derivative(f, h, xx, i), h,
+                                                    x, j)
 
 
 def symmetrically_compute_hessian(f: Callable[[np.ndarray], float], h: float, x: np.ndarray):
@@ -96,7 +101,9 @@ def symmetrically_compute_hessian(f: Callable[[np.ndarray], float], h: float, x:
         for i in range(x.size)
     ])
 
-def symmetrically_compute_hessian_by_gradient(f: Callable[[np.ndarray], float], gradient: Callable[[np.ndarray], np.ndarray], h: float, x: np.ndarray):
+
+def symmetrically_compute_hessian_by_gradient(f: Callable[[np.ndarray], float],
+                                              gradient: Callable[[np.ndarray], np.ndarray], h: float, x: np.ndarray):
     return symmetrically_compute_jacobian(gradient, h, x)
 
 
@@ -106,6 +113,36 @@ def symmetric_gradient_computer(f: Callable[[np.ndarray], float], h: float = NUM
 
 def symmetric_hessian_computer(f: Callable[[np.ndarray], float], h: float = NUMERIC_GRADIENT_COMPUTING_PRECISION):
     return lambda x: symmetrically_compute_hessian(f, h, x)
+
+
+class ApproxDump(NamedTuple):
+    label: str
+    x: np.ndarray
+    w: np.ndarray
+    loss_history: List[float]
+
+
+def plot_approx(x: np.ndarray, y: np.ndarray, approxs: List[ApproxDump]):
+    fig, (loss, graph) = plt.subplots(1, 2)
+
+    for approx in approxs:
+        loss.plot(approx.loss_history, label=approx.label)
+        graph.plot(x, Polynomial(approx.w)(x), label=approx.label)
+
+    loss.grid()
+    loss.set_yscale('log')
+    loss.legend()
+    graph.plot(x, y, label='actual')
+    graph.legend()
+
+    return fig
+
+
+def mesuare_time(f: Callable):
+    start = time.time()
+    res = f()
+    end = time.time()
+    return res, end - start
 
 
 def n_calls_mocker(f):
@@ -128,9 +165,11 @@ from contextlib import contextmanager
 import threading
 import _thread
 
+
 class TimeoutException(Exception):
     def __init__(self, msg=''):
         self.msg = msg
+
 
 @contextmanager
 def time_limit(seconds, msg=''):
@@ -148,6 +187,7 @@ def time_limit(seconds, msg=''):
 if __name__ == '__main__':
 
     import time
+
     # ends after 1 second
     with time_limit(1, 'sleep'):
         while True:
