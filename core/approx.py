@@ -15,7 +15,7 @@ def polynom_approx(x, y, deg, optimizer):
 
     def df(a: np.ndarray):
         same = Polynomial(a)(x) - y
-        return np.array([np.sum(same * (x ** j)) for j in range(a.shape[0])])
+        return np.array([2 * np.sum(same * (x ** j)) for j in range(a.shape[0])])
 
     points = optimizer(f, df, x0)
 
