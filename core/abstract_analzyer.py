@@ -254,7 +254,7 @@ class Algorithm(NamedTuple):
                 method=solver,
                 bounds=problem.bounds
             ))
-            print(opt_res)
+            # print(opt_res)
 
             return result_extractor(opt_res, elapsed)
 
