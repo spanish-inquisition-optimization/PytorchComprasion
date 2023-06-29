@@ -121,13 +121,17 @@ class ApproxDump(NamedTuple):
     w: np.ndarray
     loss_history: List[float]
 
+    @classmethod
+    def dumb(cls, label, xs, w_last):
+        return ApproxDump(label, xs, w_last, [])
 
-def plot_approx(x: np.ndarray, y: np.ndarray, approxs: List[ApproxDump]):
+
+def plot_approx(x: np.ndarray, y: np.ndarray, approxs: List[ApproxDump], pattern=Polynomial):
     fig, (loss, graph) = plt.subplots(1, 2)
 
     for approx in approxs:
         loss.plot(approx.loss_history, label=approx.label)
-        graph.plot(x, Polynomial(approx.w)(x), label=approx.label)
+        graph.plot(x, pattern(approx.w)(x), label=approx.label)
 
     loss.grid()
     loss.set_yscale('log')
